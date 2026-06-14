@@ -1,0 +1,178 @@
+services:
+  # Database Service
+  mysql:
+    image: mysql:9.7
+    container_name: mysql
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    networks:
+      - gestioneordine-network
+    volumes:
+      - mysql_volume:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Message Broker Service
+  rabbitmq:
+    image: rabbitmq:4.3.0-management
+    container_name: rabbitmq
+    ports:
+      - "5673:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-guest}
+    networks:
+      - gestioneordine-network
+    volumes:
+      - rabbitmq_volume:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Auth Service
+  auth-service:
+    image: damien0/auth-service:0.0.1
+    container_name: auth
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8080"
+    environment:
+      DB_URL: ${DB_URL_AUTH}
+      DB_USER: ${MYSQL_ROOT_USER}
+      DB_PASS: ${MYSQL_ROOT_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXP: 86400
+      CONTEXT_PATH: ${CONTEXT_PATH}
+      ADMIN_NAME: ${ADMIN_NAME}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASS: ${ADMIN_PASS}
+    networks:
+      - gestioneordine-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  # Gateway
+  spring-gateway:
+    image: damien0/spring-gateway:0.0.1
+    container_name: gateway
+    build:
+      context: ./orders-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      ORDERS_URI: http://gestioneordine:8080
+      PAYMENTS_URI: http://gestionepagamento:8080
+      CONTEXT_PATH: ${CONTEXT_PATH}
+      JWT_SECRET: ${JWT_SECRET}
+    networks:
+      - gestioneordine-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      gestioneordine:
+        condition: service_started
+      gestionepagamento:
+        condition: service_started
+
+  # Order Microservice
+  gestioneordine:
+    image: damien0/gestione-ordine:0.0.2
+    container_name: gestioneordine
+    build: 
+      context: ./order-service
+      dockerfile: Dockerfile
+    environment:
+      DB_URL: ${DB_URL_ORDINE}
+      DB_USER: ${MYSQL_ROOT_USER}
+      DB_PASS: ${MYSQL_ROOT_PASSWORD}
+      PAYMENT_SERVICE: gestionepagamento
+      CONTEXT_PATH: ${CONTEXT_PATH}
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_DEFAULT_USER}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_DEFAULT_PASS}
+      EMAIL: ${EMAIL}
+      EMAIL_PASS: ${EMAIL_PASS}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+    networks:
+      - gestioneordine-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  # Payment Microservice
+  gestionepagamento:
+    image: damien0/gestione-pagamento:0.0.2
+    container_name: gestionepagamento
+    build:
+      context: ./payment-service
+      dockerfile: Dockerfile
+    environment:
+      DB_URL: ${DB_URL_PAGAMENTO}
+      DB_USER: ${MYSQL_ROOT_USER}
+      DB_PASS: ${MYSQL_ROOT_PASSWORD}
+      CONTEXT_PATH: ${CONTEXT_PATH}
+      ORDER_SERVICE: gestioneordine
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_DEFAULT_USER}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_DEFAULT_PASS}
+      SPRING_DATASOURCE_HIKARI_MAX_LIFETIME: 900000
+    networks:
+      - gestioneordine-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+    # Notification Service
+  notification-service:
+    image: damien0/notification-service:0.0.1
+    container_name: notification
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    environment:
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_DEFAULT_USER}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_DEFAULT_PASS}
+      EMAIL: ${EMAIL}
+      EMAIL_PASS: ${EMAIL_PASS}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+    networks:
+      - gestioneordine-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      gestioneordine:
+        condition: service_started
+      gestionepagamento:
+        condition: service_started
+        
+# Shared resources
+networks:
+  gestioneordine-network:
+    driver: bridge
+
+volumes:
+  mysql_volume:
+  rabbitmq_volume:

@@ -1,0 +1,15 @@
+[submodule "auth-service"]
+	path = auth-service
+	url = https://github.com/Shiinoqt/auth-service.git
+[submodule "order-service"]
+	path = order-service
+	url = https://github.com/Shiinoqt/gestione-ordini-restclient.git
+[submodule "payment-service"]
+	path = payment-service
+	url = https://github.com/Shiinoqt/gestione-pagamenti-restclient.git
+[submodule "notification-service"]
+	path = notification-service
+	url = https://github.com/Shiinoqt/notification-service.git
+[submodule "orders-gateway"]
+	path = orders-gateway
+	url = https://github.com/Shiinoqt/orders-gateway
