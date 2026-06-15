@@ -167,6 +167,31 @@ services:
         condition: service_started
       gestionepagamento:
         condition: service_started
+  
+  # Loki/Grafana Stack
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - gestioneordine-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    networks:
+      - gestioneordine-network
+    volumes:
+      - grafana_volume:/var/lib/grafana
+    depends_on:
+      - loki
         
 # Shared resources
 networks:
@@ -176,3 +201,4 @@ networks:
 volumes:
   mysql_volume:
   rabbitmq_volume:
+  grafana_volume:
