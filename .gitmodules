@@ -3,10 +3,10 @@
 	url = https://github.com/Shiinoqt/auth-service.git
 [submodule "order-service"]
 	path = order-service
-	url = https://github.com/Shiinoqt/gestione-ordini-restclient.git
+	url = https://github.com/Shiinoqt/order-service.git
 [submodule "payment-service"]
 	path = payment-service
-	url = https://github.com/Shiinoqt/gestione-pagamenti-restclient.git
+	url = https://github.com/Shiinoqt/payment-service.git
 [submodule "notification-service"]
 	path = notification-service
 	url = https://github.com/Shiinoqt/notification-service.git
