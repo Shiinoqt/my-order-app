@@ -124,6 +124,8 @@ services:
     build:
       context: ./payment-service
       dockerfile: Dockerfile
+    volumes:
+      - ./receipts:/root/receipts
     environment:
       DB_URL: ${DB_URL_PAGAMENTO}
       DB_USER: ${MYSQL_ROOT_USER}
