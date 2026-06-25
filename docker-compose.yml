@@ -159,7 +159,12 @@ services:
       SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_DEFAULT_PASS}
       EMAIL: ${EMAIL}
       EMAIL_PASS: ${EMAIL_PASS}
-      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      AWS_S3_BUCKET_NAME: ${BUCKET_NAME}
+      AWS_S3_REGION: ${AWS_REGION}
+      SPRING_CONFIG_IMPORT: optional:configtree:/run/secrets/
+    secrets:
+      - aws.access.key
+      - aws.secret.key
     networks:
       - gestioneordine-network
     depends_on:
@@ -204,3 +209,9 @@ volumes:
   mysql_volume:
   rabbitmq_volume:
   grafana_volume:
+
+secrets:
+  aws.access.key:
+    file: ./secrets/aws.access.key
+  aws.secret.key:
+    file: ./secrets/aws.secret.key

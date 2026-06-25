@@ -22,3 +22,8 @@ logs/
 
 receipts
 receipts/
+
+aws/
+awscliv2.zip
+
+secrets/
