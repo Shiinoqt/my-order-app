@@ -100,7 +100,7 @@ services:
       DB_URL: ${DB_URL_ORDINE}
       DB_USER: ${MYSQL_ROOT_USER}
       DB_PASS: ${MYSQL_ROOT_PASSWORD}
-      PAYMENT_SERVICE: gestionepagamento
+      PAYMENT_SERVICE: http://gestionepagamento:8080/api
       CONTEXT_PATH: ${CONTEXT_PATH}
       SPRING_RABBITMQ_HOST: rabbitmq
       SPRING_RABBITMQ_PORT: 5672
@@ -131,12 +131,18 @@ services:
       DB_USER: ${MYSQL_ROOT_USER}
       DB_PASS: ${MYSQL_ROOT_PASSWORD}
       CONTEXT_PATH: ${CONTEXT_PATH}
-      ORDER_SERVICE: gestioneordine
+      ORDER_SERVICE: http://gestioneordine:8080
       SPRING_RABBITMQ_HOST: rabbitmq
       SPRING_RABBITMQ_PORT: 5672
       SPRING_RABBITMQ_USERNAME: ${RABBITMQ_DEFAULT_USER}
       SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_DEFAULT_PASS}
       SPRING_DATASOURCE_HIKARI_MAX_LIFETIME: 900000
+      AWS_S3_BUCKET_NAME: ${BUCKET_NAME}
+      AWS_S3_REGION: ${AWS_REGION}
+      SPRING_CONFIG_IMPORT: optional:configtree:/run/secrets/
+    secrets:
+      - aws.access.key
+      - aws.secret.key
     networks:
       - gestioneordine-network
     depends_on:
